@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DEFENDER_TERMINAL</title>
+<style>
+:root{
+  --bg:#000;--bg1:#050508;--bg2:#0a0a10;--b1:#111118;--b2:#1c1c28;--b3:#252535;
+  --pw:#fff;--lt:#c0c0d8;--mid:#6868a0;--dim:#333348;
+  --g:#22c55e;--r:#ef4444;--a:#f59e0b;--b:#60a5fa;--v:#a78bfa;
+  --mono:'Courier New',monospace;
+  --tb:44px;--tk:26px;--sb:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--lt);font-family:var(--mono);overflow:hidden}
+button,input,select,textarea{font-family:var(--mono)}
+button{cursor:pointer}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--b2)}
+
+/* ── LOGIN ── */
+#lg{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.lg-scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.015) 3px,rgba(255,255,255,.015) 4px)}
+.lg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(96,165,250,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.04) 1px,transparent 1px);background-size:50px 50px}
+.lg-inner{position:relative;z-index:2;width:100%;max-width:400px;padding:0 28px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.lg-icon{font-size:44px;filter:drop-shadow(0 0 24px rgba(96,165,250,.5));animation:iconPulse 3s ease-in-out infinite}
+@keyframes iconPulse{0%,100%{filter:drop-shadow(0 0 16px rgba(96,165,250,.4))}50%{filter:drop-shadow(0 0 32px rgba(96,165,250,.8))}}
+.lg-title{font-size:32px;font-weight:700;letter-spacing:14px;color:#fff;text-align:center}
+.lg-ver{font-size:7px;letter-spacing:4px;color:var(--dim);margin-top:2px}
+.lg-divider{width:80px;height:1px;background:linear-gradient(90deg,transparent,var(--b),transparent)}
+.lg-form{width:100%;display:flex;flex-direction:column;gap:14px}
+.lg-f label{font-size:7px;letter-spacing:3px;color:var(--dim);display:block;margin-bottom:6px}
+.lg-f input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--b2);color:#fff;font-size:15px;letter-spacing:2px;padding:8px 0;outline:none;transition:border-color .2s}
+.lg-f input:focus{border-bottom-color:var(--b)}
+.lg-btn{width:100%;padding:14px;background:transparent;border:1px solid var(--b2);color:#fff;font-size:10px;letter-spacing:5px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;margin-top:4px}
+.lg-btn:hover{border-color:var(--b);background:rgba(96,165,250,.04)}
+.lg-btn:active{transform:scale(.99)}
+.lg-st{font-size:7px;letter-spacing:2px;color:var(--dim);text-align:center;min-height:14px;transition:color .2s}
+.lg-st.err{color:var(--r)}
+.lg-st.ok{color:var(--g)}
+.lg-ft{font-size:6px;letter-spacing:2px;color:var(--dim);text-align:center}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;height:100%}
+
+/* TOPBAR */
+#tb{height:var(--tb);background:rgba(0,0,4,.98);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 10px;gap:0;flex-shrink:0;position:relative;z-index:100}
+.tb-brand{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-right:10px}
+.tb-icon{font-size:14px}
+.tb-logo{font-size:10px;font-weight:700;letter-spacing:5px;color:#fff;white-space:nowrap}
+.tb-nav{display:flex;flex:1;overflow-x:auto;scrollbar-width:none}
+.tb-nav::-webkit-scrollbar{display:none}
+.tb-tab{padding:0 10px;height:var(--tb);display:flex;align-items:center;font-size:8px;letter-spacing:2px;color:var(--dim);white-space:nowrap;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0}
+.tb-tab:hover{color:var(--lt)}
+.tb-tab.on{color:#fff;border-bottom-color:var(--b)}
+.tb-r{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:6px}
+.tb-clk{font-size:9px;color:var(--g);letter-spacing:2px;font-weight:700}
+.tb-cfg{background:transparent;border:1px solid var(--b2);color:var(--mid);padding:4px 8px;font-size:7px;letter-spacing:1px}
+.tb-cfg:hover{border-color:var(--b3);color:var(--lt)}
+.dot{width:5px;height:5px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot.g{background:var(--g);animation:blink 2s ease-in-out infinite}
+.dot.r{background:var(--r);animation:blink 2.5s ease-in-out infinite}
+.dot.a{background:var(--a);animation:blink 1.8s ease-in-out infinite .5s}
+.dot.b{background:var(--b);animation:blink 2.2s ease-in-out infinite 1s}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.tb-dots{display:flex;align-items:center;gap:5px}
+
+/* TICKER */
+#tk{height:var(--tk);background:var(--bg1);border-bottom:1px solid var(--b1);overflow:hidden;flex-shrink:0}
+.tk-mask{height:100%;mask-image:linear-gradient(90deg,transparent,black 4%,black 96%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,black 4%,black 96%,transparent)}
+.tk-track{display:flex;align-items:center;height:100%;white-space:nowrap;animation:tkScroll 55s linear infinite}
+@keyframes tkScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tk-i{display:inline-flex;align-items:center;gap:5px;padding:0 16px;border-right:1px solid var(--b1);height:100%}
+.tk-s{font-size:7px;letter-spacing:1px;color:var(--dim)}
+.tk-v{font-size:8px;color:#fff;font-weight:700}
+.tk-c{font-size:7px}.tk-c.u{color:var(--g)}.tk-c.d{color:var(--r)}
+
+/* WORKSPACE */
+#ws{flex:1;overflow:hidden;position:relative}
+.view{display:none;width:100%;height:100%;overflow:hidden;position:absolute;inset:0}
+.view.on{display:flex;flex-direction:column}
+
+/* ── GLOBE ── */
+#globe-view canvas{display:block}
+#gcanvas{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 60%,#00001a 0%,#000005 60%,#000 100%)}
+
+/* Stars canvas behind globe */
+#starfield{position:absolute;inset:0;width:100%;height:100%}
+
+/* Layer bar */
+#lbar{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:10;flex-wrap:wrap;justify-content:center;padding:0 8px;max-width:98vw}
+.lb{background:rgba(0,0,4,.9);border:1px solid var(--b2);color:var(--dim);padding:5px 10px;font-size:7px;letter-spacing:2px;cursor:pointer;transition:all .15s;white-space:nowrap;backdrop-filter:blur(4px)}
+.lb:hover{color:var(--lt);border-color:var(--b3)}
+.lb.on{color:#fff;border-color:#fff;background:rgba(255,255,255,.04)}
+.lb-sp{border-color:rgba(96,165,250,.3);color:var(--b)}
+.lb-sp:hover{border-color:var(--b)}
+
+/* Globe HUD */
+.ghud{position:absolute;top:52px;background:rgba(0,0,4,.85);border:1px solid var(--b1);padding:8px 10px;z-index:10;backdrop-filter:blur(4px)}
+#ghud-l{left:8px}
+#ghud-r{right:8px;text-align:right}
+.hrow{display:flex;gap:6px;align-items:center;margin:2px 0;font-size:7px}
+#ghud-r .hrow{justify-content:flex-end}
+.hk{color:var(--dim);font-size:6px;letter-spacing:1px;min-width:52px}
+.hv{color:#fff;font-weight:700;font-size:7px}
+.hv.g{color:var(--g)}.hv.r{color:var(--r)}.hv.a{color:var(--a)}.hv.b{color:var(--b)}
+
+/* Zoom controls */
+#zctl{position:absolute;right:8px;bottom:34px;z-index:10;display:flex;flex-direction:column;gap:3px}
+.zbtn{width:32px;height:32px;background:rgba(0,0,4,.88);border:1px solid var(--b2);color:var(--lt);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;backdrop-filter:blur(4px)}
+.zbtn:hover{border-color:var(--b3);color:#fff}
+.zbtn.on{border-color:var(--b);color:var(--b)}
+
+/* Globe tooltip */
+#gtip{position:absolute;z-index:20;background:rgba(0,0,4,.97);border:1px solid var(--b2);padding:10px 12px;min-width:180px;max-width:250px;pointer-events:none;display:none}
+.gt-name{font-size:10px;font-weight:700;color:#fff;margin-bottom:4px}
+.gt-meta{font-size:7px;color:var(--dim);letter-spacing:1px;margin-bottom:8px}
+.gt-row{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px solid var(--b1)}
+.gt-k{color:var(--mid)}.gt-v{color:#fff;font-weight:700}
+.gt-sig{display:inline-block;font-size:7px;font-weight:700;padding:2px 6px;margin-top:6px;letter-spacing:1px}
+.gt-sig.buy{color:var(--g);border:1px solid rgba(34,197,94,.3)}
+.gt-sig.hold{color:var(--a);border:1px solid rgba(245,158,11,.3)}
+.gt-sig.risk{color:var(--r);border:1px solid rgba(239,68,68,.3)}
+
+/* ── VIEWS COMMON ── */
+.vhdr{padding:8px 14px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--bg1);flex-wrap:wrap}
+.vtitle{font-size:10px;font-weight:700;letter-spacing:3px;color:#fff}
+.fbar{display:flex;gap:4px;flex-wrap:wrap}
+.fbtn{padding:3px 8px;background:transparent;border:1px solid var(--b1);color:var(--dim);font-size:7px;letter-spacing:1px;cursor:pointer;transition:all .15s}
+.fbtn.on,.fbtn:hover{border-color:var(--b2);color:#fff}
+
+/* ── INTEL ── */
+.ngrid{flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.nc{background:var(--bg1);border:1px solid var(--b1);padding:10px;cursor:pointer;transition:border-color .15s;position:relative}
+.nc:hover{border-color:var(--b2)}
+.nc-ai{position:absolute;top:6px;right:6px;background:var(--b);color:#000;font-size:6px;letter-spacing:1px;padding:1px 4px;font-weight:700}
+.nc-src{display:flex;justify-content:space-between;font-size:7px;margin-bottom:6px}
+.nc-img{height:60px;overflow:hidden;background:var(--bg2);margin-bottom:8px}
+.nc-img img{width:100%;height:100%;object-fit:cover}
+.nc-t{font-size:9px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nc-d{font-size:7px;color:var(--mid);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nc-ft{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;border-top:1px solid var(--b1);font-size:7px}
+.nc-tag{border:1px solid var(--b2);padding:1px 5px;color:var(--dim)}
+.wsj{color:#d97706}.blg{color:#3b82f6}.bar{color:#22c55e}.rt{color:#ef4444}.ft{color:#f97316}.sa{color:#8b5cf6}
+
+/* ── MARKETS ── */
+.mkts-b{flex:1;overflow-y:auto}
+.kpis{display:flex;gap:6px;padding:10px 12px;flex-wrap:wrap;border-bottom:1px solid var(--b1);background:var(--bg1)}
+.kpi{background:var(--bg2);border:1px solid var(--b1);padding:8px 12px;min-width:100px}
+.kpi-v{font-size:17px;font-weight:700}
+.kpi-k{font-size:7px;letter-spacing:1px;color:var(--dim);margin:3px 0 2px}
+.kpi-c{font-size:7px}
+.kpi-v.g,.kpi-c.u{color:var(--g)}.kpi-v.r,.kpi-c.d{color:var(--r)}.kpi-v.a{color:var(--a)}
+.chts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.cht{background:var(--bg1);border:1px solid var(--b1);padding:10px}
+.cht-t{font-size:7px;letter-spacing:2px;color:var(--dim);margin-bottom:8px}
+
+/* ── TRADING ── */
+.tv-layout{display:flex;flex:1;min-height:0}
+.tv-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.tv-bar{padding:6px 8px;background:var(--bg1);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.tv-inp{background:var(--bg2);border:1px solid var(--b2);color:#fff;padding:5px 8px;font-size:9px;letter-spacing:1px;width:140px;outline:none}
+.tv-go{background:var(--b1);border:1px solid var(--b2);color:#fff;padding:5px 10px;font-size:7px;letter-spacing:2px}
+.tv-go:hover{background:var(--b2)}
+.tv-ql{font-size:7px;color:var(--dim);margin:0 3px 0 6px}
+.tv-qb{background:transparent;border:1px solid var(--b1);color:var(--dim);padding:3px 6px;font-size:7px;transition:all .15s}
+.tv-qb:hover{border-color:var(--b2);color:#fff}
+#tv-fr{flex:1;border:none;min-height:0}
+.wl{width:170px;background:var(--bg1);border-left:1px solid var(--b1);overflow-y:auto;flex-shrink:0}
+.wl-h{padding:8px 10px;font-size:7px;letter-spacing:2px;color:var(--dim);border-bottom:1px solid var(--b1)}
+.wl-r{padding:7px 10px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;cursor:pointer;transition:background .1s}
+.wl-r:hover{background:var(--bg2)}
+.wl-sym{font-size:9px;font-weight:700;color:#fff}
+.wl-p{font-size:8px;color:var(--lt)}
+.wl-c{font-size:7px}.wl-c.u{color:var(--g)}.wl-c.d{color:var(--r)}
+
+/* ── PORTFOLIO ── */
+.port-b{flex:1;display:flex;gap:8px;padding:10px;overflow:hidden;min-height:0}
+.pt-wrap{flex:1;overflow:auto}
+.pt{width:100%;border-collapse:collapse;font-size:8px}
+.pt th{background:var(--bg2);color:var(--dim);font-size:7px;letter-spacing:1px;padding:6px 8px;text-align:left;border-bottom:1px solid var(--b1);white-space:nowrap}
+.pt td{padding:6px 8px;border-bottom:1px solid var(--b1);vertical-align:middle}
+.pt tr:hover td{background:rgba(255,255,255,.015)}
+.pt-sym{font-weight:700;color:#fff;font-size:10px}
+.pt-buy{color:var(--g);font-weight:700;font-size:7px}.pt-hold{color:var(--a);font-weight:700;font-size:7px}.pt-risk{color:var(--r);font-weight:700;font-size:7px}
+.port-sd{width:240px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;overflow-y:auto}
+.psc{background:var(--bg1);border:1px solid var(--b1);padding:10px}
+.psc-t{font-size:7px;letter-spacing:2px;color:var(--dim);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--b1)}
+.psc-r{font-size:7px;color:var(--mid);padding:3px 0 3px 8px;border-left:2px solid var(--b2);margin:2px 0;line-height:1.5}
+.psc-r.g{border-left-color:var(--g);color:var(--g)}
+.psc-r.r{border-left-color:var(--r);color:var(--r)}
+.psc-r.a{border-left-color:var(--a);color:var(--a)}
+
+/* ── BRIEFING ── */
+.brief-w{flex:1;overflow-y:auto;padding:14px 18px}
+.brief-mast{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--b1);margin-bottom:14px}
+.bm-l,.bm-r{flex:1}.bm-r{text-align:right}
+.bm-date{font-size:9px;font-weight:700;color:#fff;letter-spacing:2px}
+.bm-sub{font-size:6px;letter-spacing:2px;color:var(--dim);margin-top:2px}
+.bm-logo{font-size:20px;font-weight:700;letter-spacing:6px;color:#fff;text-align:center;flex-shrink:0}
+.bm-cl{font-size:6px;letter-spacing:2px;color:var(--r)}
+.brief-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bc{background:var(--bg1);border:1px solid var(--b1);padding:12px}
+.bc-t{font-size:7px;letter-spacing:2px;color:var(--dim);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--b1)}
+.bce{display:flex;align-items:flex-start;gap:6px;font-size:8px;padding:4px 0;line-height:1.5}
+.bcs{display:flex;align-items:center;gap:6px;font-size:8px;padding:4px 0;border-bottom:1px solid var(--b1)}
+.bcs-sym{font-weight:700;color:#fff;width:44px;flex-shrink:0}
+.bcs-z{font-size:7px;font-weight:700;padding:2px 5px;flex-shrink:0}
+.bcs-z.g{background:rgba(34,197,94,.1);color:var(--g)}.bcs-z.r{background:rgba(239,68,68,.1);color:var(--r)}.bcs-z.a{background:rgba(245,158,11,.1);color:var(--a)}
+.bcs-n{font-size:7px;color:var(--mid);flex:1}
+.bc-q{font-size:8px;line-height:1.8;border-left:3px solid var(--a);padding:6px 10px;margin:6px 0;color:var(--lt)}
+.bc-rule{display:flex;gap:5px;font-size:7px;color:var(--mid);padding:3px 0}
+
+/* ── AI ── */
+.ai-lay{display:flex;flex:1;min-height:0}
+.ai-sd{width:200px;background:var(--bg1);border-right:1px solid var(--b1);padding:12px 10px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:5px}
+.ai-sd-h{font-size:7px;letter-spacing:2px;color:var(--dim)}
+.ai-st{font-size:8px;letter-spacing:1px;padding:4px 6px;border:1px solid;margin-bottom:2px}
+.ai-st.ok{color:var(--g);border-color:rgba(34,197,94,.3)}.ai-st.no{color:var(--r);border-color:rgba(239,68,68,.3)}
+.ai-md{font-size:7px;color:var(--dim)}
+.ai-div{font-size:7px;letter-spacing:2px;color:var(--dim);margin-top:8px;padding-bottom:5px;border-bottom:1px solid var(--b1)}
+.ai-qb{background:transparent;border:1px solid var(--b1);color:var(--dim);padding:5px 7px;font-size:7px;letter-spacing:1px;text-align:left;cursor:pointer;transition:all .15s;width:100%}
+.ai-qb:hover{border-color:var(--b2);color:var(--lt)}
+.ai-cl{background:transparent;border:1px solid var(--b1);color:var(--r);padding:5px 7px;font-size:7px;letter-spacing:1px;width:100%;margin-top:auto}
+.ai-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.ai-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ai-msg{display:flex;gap:8px}
+.ai-msg.usr{flex-direction:row-reverse}
+.ai-av{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;letter-spacing:1px;flex-shrink:0;border:1px solid}
+.ai-msg.ai .ai-av{background:rgba(96,165,250,.08);border-color:rgba(96,165,250,.25);color:var(--b)}
+.ai-msg.usr .ai-av{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2);color:var(--g)}
+.ai-inn{max-width:88%}
+.ai-bub{background:var(--bg1);border:1px solid var(--b1);padding:8px 10px;font-size:8px;line-height:1.8;color:var(--lt)}
+.ai-msg.usr .ai-bub{background:var(--bg2)}
+.ai-ts{font-size:6px;color:var(--dim);margin-top:2px}
+.ai-msg.usr .ai-ts{text-align:right}
+.ai-think{display:flex;gap:3px;padding:4px 0}
+.ai-dot{width:5px;height:5px;background:var(--b);border-radius:50%;animation:aiD 1.2s ease-in-out infinite}
+.ai-dot:nth-child(2){animation-delay:.2s}.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes aiD{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+.ai-chips{padding:6px 12px;display:flex;gap:4px;flex-wrap:wrap;border-top:1px solid var(--b1);background:var(--bg1)}
+.ai-chip{background:transparent;border:1px solid var(--b1);color:var(--dim);padding:3px 8px;font-size:7px;cursor:pointer;transition:all .15s}
+.ai-chip:hover{border-color:var(--b2);color:var(--lt)}
+.ai-iw{display:flex;padding:8px 12px;background:var(--bg1);border-top:1px solid var(--b1)}
+.ai-ta{flex:1;background:var(--bg2);border:1px solid var(--b2);color:#fff;padding:7px 10px;font-size:9px;resize:none;outline:none;min-height:38px}
+.ai-ta:focus{border-color:var(--b3)}
+.ai-send{background:var(--b1);border:1px solid var(--b2);border-left:none;color:#fff;padding:0 14px;font-size:7px;letter-spacing:2px}
+.ai-send:hover{background:var(--b2)}
+
+/* ── SETTINGS MODAL ── */
+.modal{position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center}
+.modal.on{display:flex}
+.mb{background:var(--bg1);border:1px solid var(--b2);width:460px;max-width:96vw;max-height:90vh;overflow-y:auto}
+.mb-hdr{padding:10px 14px;border-bottom:1px solid var(--b1);font-size:9px;letter-spacing:3px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+.mb-x{background:transparent;border:none;color:var(--dim);font-size:14px;cursor:pointer}
+.mb-x:hover{color:#fff}
+.mb-sec{padding:6px 14px;font-size:7px;letter-spacing:2px;color:var(--dim);background:var(--bg2)}
+.mb-f{padding:7px 14px;display:flex;flex-direction:column;gap:3px;border-bottom:1px solid var(--b1)}
+.mb-f label{font-size:7px;letter-spacing:1px;color:var(--dim)}
+.mb-f input,.mb-f select{background:transparent;border:1px solid var(--b2);color:#fff;padding:5px 7px;font-size:9px;outline:none;width:100%}
+.mb-f select option{background:var(--bg1)}
+.mb-save{width:calc(100% - 28px);margin:10px 14px;background:var(--b1);border:1px solid var(--b2);color:#fff;padding:10px;font-size:8px;letter-spacing:3px}
+.mb-save:hover{background:var(--b2)}
+.mb-msg{padding:0 14px 10px;font-size:8px;min-height:18px}
+.mb-msg.ok{color:var(--g)}.mb-msg.err{color:var(--r)}
+
+/* STATUS BAR */
+#sb{height:var(--sb);background:var(--bg1);border-top:1px solid var(--b1);display:flex;align-items:center;padding:0 10px;gap:10px;flex-shrink:0}
+.sb-l{display:flex;gap:10px;flex-shrink:0}
+.sb-i{display:flex;align-items:center;gap:3px;font-size:6px;letter-spacing:1px;color:var(--dim)}
+.sb-tk{flex:1;font-size:6px;letter-spacing:1px;color:var(--dim);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-r{font-size:7px;color:var(--g);flex-shrink:0;letter-spacing:1px}
+
+@media(max-width:640px){
+  .tb-logo{font-size:8px;letter-spacing:2px}
+  #ghud-r{display:none}
+  .brief-g{grid-template-columns:1fr}
+  .chts{grid-template-columns:1fr}
+  .wl{display:none}
+  .ai-sd{display:none}
+  .port-sd{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="lg">
+  <div class="lg-scan"></div>
+  <div class="lg-grid"></div>
+  <div class="lg-inner">
+    <div class="lg-icon">🛡</div>
+    <div class="lg-title">DEFENDER</div>
+    <div class="lg-ver">TERMINAL · PRIVATE INTELLIGENCE SYSTEM · v1.0</div>
+    <div class="lg-divider"></div>
+    <div class="lg-form">
+      <div class="lg-f"><label>OPERATOR ID</label><input id="l-u" value="OPERATOR_01" spellcheck="false" autocomplete="off"></div>
+      <div class="lg-f"><label>ACCESS CODE</label><input type="password" id="l-p" value="123" autocomplete="off"></div>
+      <button class="lg-btn" onclick="doLogin()">INITIALIZE &amp; AUTHENTICATE</button>
+      <div class="lg-st" id="l-st">SYSTEM STANDBY · ENTER CREDENTIALS</div>
+    </div>
+    <div class="lg-ft">ENCRYPTION: AES-256 · TLS 1.3 · DEFENDER_TERMINAL v1.0</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div id="tb">
+    <div class="tb-brand">
+      <span class="tb-icon">🛡</span>
+      <span class="tb-logo">DEFENDER_TERMINAL</span>
+    </div>
+    <nav class="tb-nav">
+      <div class="tb-tab on"  onclick="nav('globe-view',this)">🌍 GLOBE</div>
+      <div class="tb-tab"     onclick="nav('intel-view',this)">📡 INTEL</div>
+      <div class="tb-tab"     onclick="nav('mkts-view',this)">📈 MARKETS</div>
+      <div class="tb-tab"     onclick="nav('trade-view',this)">📊 TRADING</div>
+      <div class="tb-tab"     onclick="nav('port-view',this)">💼 PORTFOLIO</div>
+      <div class="tb-tab"     onclick="nav('brief-view',this)">📋 BRIEFING</div>
+      <div class="tb-tab"     onclick="nav('ai-view',this)">🤖 AI</div>
+    </nav>
+    <div class="tb-r">
+      <div class="tb-dots"><span class="dot g"></span><span class="dot a"></span><span class="dot b"></span></div>
+      <div class="tb-clk" id="tb-clk">--:--:--</div>
+      <button class="tb-cfg" onclick="openCfg()">⚙ CFG</button>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div id="tk"><div class="tk-mask"><div class="tk-track" id="tk-track"></div></div></div>
+
+  <!-- WORKSPACE -->
+  <div id="ws">
+
+    <!-- GLOBE -->
+    <div class="view on" id="globe-view">
+      <canvas id="starfield"></canvas>
+      <canvas id="gcanvas"></canvas>
+      <div id="lbar">
+        <div class="lb on" onclick="setLayer('portfolio',this)">📍 PORTFOLIO</div>
+        <div class="lb"    onclick="setLayer('war',this)">⚔ WAR ZONES</div>
+        <div class="lb"    onclick="setLayer('military',this)">🚢 MILITARY</div>
+        <div class="lb"    onclick="setLayer('trade',this)">🔀 TRADE ROUTES</div>
+        <div class="lb lb-sp" onclick="openWindy()">💨 WINDY</div>
+        <div class="lb lb-sp" onclick="openMarine()">⚓ VESSELS</div>
+      </div>
+      <div class="ghud" id="ghud-l">
+        <div class="hrow"><span class="hk">LAYER</span><span class="hv b" id="h-layer">PORTFOLIO HQ</span></div>
+        <div class="hrow"><span class="hk">POSITIONS</span><span class="hv">12 TRACKED</span></div>
+        <div class="hrow"><span class="hk">DEFCON</span><span class="hv a">3 — ELEVATED</span></div>
+        <div class="hrow"><span class="hk">COORD</span><span class="hv b" id="h-coord">49.21°N 16.88°E</span></div>
+      </div>
+      <div class="ghud" id="ghud-r">
+        <div class="hrow"><span class="hk">GOLD</span><span class="hv g">$2,934 ATH</span></div>
+        <div class="hrow"><span class="hk">VIX</span><span class="hv a">18.34</span></div>
+        <div class="hrow"><span class="hk">WAR ZONES</span><span class="hv r">4 ACTIVE</span></div>
+        <div class="hrow"><span class="hk">CARRIERS</span><span class="hv">4 DEPLOYED</span></div>
+      </div>
+      <div id="zctl">
+        <div class="zbtn" onclick="gZoomIn()">+</div>
+        <div class="zbtn" onclick="gZoomOut()">−</div>
+        <div class="zbtn" onclick="gReset()">⌂</div>
+        <div class="zbtn" id="rot-btn" onclick="gToggleRot()" title="Rotate">↻</div>
+      </div>
+      <div id="gtip"></div>
+    </div>
+
+    <!-- INTEL -->
+    <div class="view" id="intel-view">
+      <div class="vhdr">
+        <div class="vtitle">📡 INTELLIGENCE FEED</div>
+        <div class="fbar">
+          <div class="fbtn on" onclick="filterNews('all',this)">ALL</div>
+          <div class="fbtn" onclick="filterNews('def',this)">DEFENSE</div>
+          <div class="fbtn" onclick="filterNews('tech',this)">TECH</div>
+          <div class="fbtn" onclick="filterNews('oil',this)">OIL</div>
+          <div class="fbtn" onclick="filterNews('geo',this)">GEO</div>
+          <div class="fbtn" onclick="filterNews('macro',this)">MACRO</div>
+        </div>
+      </div>
+      <div class="ngrid" id="ngrid"></div>
+    </div>
+
+    <!-- MARKETS -->
+    <div class="view" id="mkts-view">
+      <div class="vhdr"><div class="vtitle">📈 MARKETS OVERVIEW</div></div>
+      <div class="mkts-b">
+        <div class="kpis" id="kpis"></div>
+        <div class="chts">
+          <div class="cht"><div class="cht-t">PORTFOLIO PERFORMANCE (12M)</div><canvas id="cv-p" height="140"></canvas></div>
+          <div class="cht"><div class="cht-t">SECTOR ALLOCATION</div><canvas id="cv-s" height="140"></canvas></div>
+          <div class="cht"><div class="cht-t">RISK / RETURN MAP</div><canvas id="cv-r" height="140"></canvas></div>
+          <div class="cht"><div class="cht-t">DEFENSE vs S&P500 (12M)</div><canvas id="cv-d" height="140"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRADING -->
+    <div class="view" id="trade-view">
+      <div class="tv-layout">
+        <div class="tv-main">
+          <div class="tv-bar">
+            <input class="tv-inp" id="tv-sym" value="XETR:RHM" spellcheck="false">
+            <button class="tv-go" onclick="tvLoad()">LOAD</button>
+            <span class="tv-ql">DEF:</span>
+            <button class="tv-qb" onclick="tvS('XETR:RHM')">RHM</button>
+            <button class="tv-qb" onclick="tvS('NASDAQ:LMT')">LMT</button>
+            <button class="tv-qb" onclick="tvS('OMX:SAAB_B')">SAAB</button>
+            <button class="tv-qb" onclick="tvS('LSE:BA')">BAE</button>
+            <button class="tv-qb" onclick="tvS('XETR:HAG')">HAG</button>
+            <button class="tv-qb" onclick="tvS('XETR:TKA')">TKA</button>
+            <span class="tv-ql">TECH:</span>
+            <button class="tv-qb" onclick="tvS('NASDAQ:NVDA')">NVDA</button>
+            <button class="tv-qb" onclick="tvS('NASDAQ:META')">META</button>
+            <button class="tv-qb" onclick="tvS('NASDAQ:MSFT')">MSFT</button>
+            <button class="tv-qb" onclick="tvS('NASDAQ:GOOGL')">GOOGL</button>
+            <span class="tv-ql">OIL:</span>
+            <button class="tv-qb" onclick="tvS('NYSE:XOM')">XOM</button>
+            <button class="tv-qb" onclick="tvS('NYSE:CVX')">CVX</button>
+            <span class="tv-ql">MACRO:</span>
+            <button class="tv-qb" onclick="tvS('TVC:GOLD')">GOLD</button>
+            <button class="tv-qb" onclick="tvS('TVC:USOIL')">OIL</button>
+            <button class="tv-qb" onclick="tvS('CBOE:VIX')">VIX</button>
+            <button class="tv-qb" onclick="tvS('BITSTAMP:BTCUSD')">BTC</button>
+          </div>
+          <iframe id="tv-fr" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <div class="wl"><div class="wl-h">WATCHLIST</div><div id="wl-list"></div></div>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="view" id="port-view">
+      <div class="vhdr">
+        <div class="vtitle">💼 PORTFOLIO TRACKER</div>
+        <div style="margin-left:auto;display:flex;gap:12px;font-size:8px">
+          <span style="color:var(--g)">▲ BUY ZONES: 8</span>
+          <span style="color:var(--a)">◆ HOLD: 3</span>
+          <span style="color:var(--r)">▼ RISK: 1</span>
+          <span style="color:var(--g);font-weight:700">+35.2% YTD</span>
+        </div>
+      </div>
+      <div class="port-b">
+        <div class="pt-wrap"><table class="pt" id="pt"></table></div>
+        <div class="port-sd">
+          <div class="psc">
+            <div class="psc-t">DEFENDER SIGNALS</div>
+            <div class="psc-r g">▲ BUY ZONE: RHM LMT SAAB NVDA META GOOGL XOM CVX</div>
+            <div class="psc-r a">◆ HOLD: BAE HAG MSFT</div>
+            <div class="psc-r r">▼ RISK ZONE: TKA — rotate to RHM NOW</div>
+          </div>
+          <div class="psc">
+            <div class="psc-t">IRON RULES</div>
+            <div class="psc-r r">NEVER sell LMT/RHM on pullback &lt;5%</div>
+            <div class="psc-r r">NEVER chase NVDA above $155</div>
+            <div class="psc-r a">ROTATE TKA → RHM urgently</div>
+            <div class="psc-r g">DCA 500 CZK/month into ETF — always</div>
+            <div class="psc-r g">Keep 15% cash for crisis buying</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRIEFING -->
+    <div class="view" id="brief-view">
+      <div class="brief-w">
+        <div class="brief-mast">
+          <div class="bm-l"><div class="bm-date" id="bm-date">—</div><div class="bm-sub">MORNING INSTITUTIONAL BRIEFING</div></div>
+          <div class="bm-logo">🛡 DEFENDER</div>
+          <div class="bm-r"><div class="bm-cl">PRIVATE & CLASSIFIED</div><div class="bm-sub">OPERATOR: JAKUB SKLADANY</div></div>
+        </div>
+        <div class="brief-g" id="brief-g"></div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="view" id="ai-view">
+      <div class="ai-lay">
+        <div class="ai-sd">
+          <div class="ai-sd-h">DEFENDER AI</div>
+          <div class="ai-st" id="ai-st">CHECKING...</div>
+          <div class="ai-md" id="ai-md">—</div>
+          <div class="ai-div">QUICK INTEL</div>
+          <button class="ai-qb" onclick="qP('MORNING BRIEFING')">☀ MORNING BRIEFING</button>
+          <button class="ai-qb" onclick="qP('SIMULATION NATO')">⚡ WAR SIMULATION</button>
+          <button class="ai-qb" onclick="qP('PLAN FOR RHM')">🎯 PLAN: RHM</button>
+          <button class="ai-qb" onclick="qP('PLAN FOR NVDA')">🎯 PLAN: NVDA</button>
+          <button class="ai-qb" onclick="qP('TKA DECISION')">⚠ TKA ROTATE?</button>
+          <button class="ai-qb" onclick="qP('FRIDAY CLOSE')">📊 FRIDAY CLOSE</button>
+          <button class="ai-qb" onclick="qP('Co nakoupit za 10000 CZK?')">🇨🇿 CO NAKOUPIT</button>
+          <div class="ai-div" style="margin-top:auto">SESSION</div>
+          <div style="font-size:7px;color:var(--dim)">MSGS: <span id="ai-cnt">0</span></div>
+          <button class="ai-cl" onclick="clearChat()">CLEAR SESSION</button>
+        </div>
+        <div class="ai-main">
+          <div class="ai-msgs" id="ai-msgs"></div>
+          <div class="ai-chips">
+            <button class="ai-chip" onclick="qP('RHM fundamentals')">RHM</button>
+            <button class="ai-chip" onclick="qP('NVDA Blackwell')">NVDA</button>
+            <button class="ai-chip" onclick="qP('Ukraine portfolio impact')">UKRAINE</button>
+            <button class="ai-chip" onclick="qP('Red Sea risk')">RED SEA</button>
+            <button class="ai-chip" onclick="qP('Fed rate path')">FED</button>
+            <button class="ai-chip" onclick="qP('Gold ATH meaning')">GOLD</button>
+            <button class="ai-chip" onclick="qP('TKA sell decision')">TKA</button>
+          </div>
+          <div class="ai-iw">
+            <textarea class="ai-ta" id="ai-inp" placeholder="Ask DEFENDER..." onkeydown="aiKey(event)" rows="2"></textarea>
+            <button class="ai-send" onclick="sendMsg()">SEND ↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ws -->
+
+  <!-- STATUS BAR -->
+  <div id="sb">
+    <div class="sb-l">
+      <span class="sb-i"><span class="dot g"></span>LIVE</span>
+      <span class="sb-i"><span class="dot a"></span>DEFCON 3</span>
+      <span class="sb-i"><span class="dot b"></span>AI</span>
+    </div>
+    <div class="sb-tk">DEFENDER_TERMINAL v1.0 · JAKUB SKLADANY · AES-256 · PRIVATE & CLASSIFIED</div>
+    <div class="sb-r" id="sb-r">—</div>
+  </div>
+</div><!-- /app -->
+
+<!-- SETTINGS MODAL -->
+<div class="modal" id="cfg-modal">
+  <div class="mb">
+    <div class="mb-hdr">⚙ CONFIGURATION <button class="mb-x" onclick="closeCfg()">✕</button></div>
+    <div class="mb-sec">AUTHENTICATION</div>
+    <div class="mb-f"><label>CURRENT PASSWORD</label><input type="password" id="s-cur" placeholder="Current"></div>
+    <div class="mb-f"><label>NEW PASSWORD</label><input type="password" id="s-new" placeholder="New"></div>
+    <div class="mb-f"><label>CONFIRM NEW PASSWORD</label><input type="password" id="s-con" placeholder="Confirm"></div>
+    <div class="mb-sec">AI PROVIDERS</div>
+    <div class="mb-f"><label>ANTHROPIC (Claude) API KEY</label><input type="password" id="s-cl" placeholder="sk-ant-..."></div>
+    <div class="mb-f"><label>OPENAI (GPT-4o) API KEY</label><input type="password" id="s-oa" placeholder="sk-..."></div>
+    <div class="mb-f"><label>AI MODEL</label>
+      <select id="s-mod">
+        <option value="claude-sonnet-4-6">Claude Sonnet 4 — Recommended</option>
+        <option value="claude-opus-4-6">Claude Opus 4 — Most Powerful</option>
+        <option value="gpt-4o">GPT-4o</option>
+      </select>
+    </div>
+    <button class="mb-save" onclick="saveCfg()">SAVE CONFIGURATION</button>
+    <div class="mb-msg" id="s-msg"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ═══ KEYS ═══
+const _K = { pw:'dft1_pw', cl:'dft1_cl', oa:'dft1_oa', md:'dft1_md' };
+function hashPw(pw) { let h=0; for(let i=0;i<pw.length;i++) h=((h<<5)-h)+pw.charCodeAt(i),h|=0; return 'v1_'+Math.abs(h).toString(36); }
+const DEF_PW = hashPw('123');
+function getStoredPw() { return localStorage.getItem(_K.pw) || DEF_PW; }
+function getClaude()   { return localStorage.getItem(_K.cl) || ''; }
+function getOAI()      { return localStorage.getItem(_K.oa) || ''; }
+function getModel()    { return localStorage.getItem(_K.md) || 'claude-sonnet-4-6'; }
+
+// ═══ LOGIN ═══
+function doLogin() {
+  const u = document.getElementById('l-u').value.trim();
+  const p = document.getElementById('l-p').value;
+  const st = document.getElementById('l-st');
+  if (!u) { st.textContent='ENTER OPERATOR ID'; st.className='lg-st err'; return; }
+  if (hashPw(p) !== getStoredPw()) {
+    st.textContent='ACCESS DENIED — INVALID CODE'; st.className='lg-st err';
+    return;
+  }
+  st.textContent='✓ AUTHENTICATED — INITIALIZING...'; st.className='lg-st ok';
+  setTimeout(()=>{ document.getElementById('lg').style.display='none'; document.getElementById('app').style.display='flex'; initApp(); }, 600);
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter') { const lg=document.getElementById('lg'); if(lg.style.display!=='none') doLogin(); } });
+
+// ═══ CLOCK ═══
+function updateClock() {
+  const n=new Date(), p=x=>String(x).padStart(2,'0');
+  const s=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds())+' CET';
+  const e1=document.getElementById('tb-clk'),e2=document.getElementById('sb-r');
+  if(e1) e1.textContent=s; if(e2) e2.textContent=s;
+}
+
+// ═══ NAV ═══
+function nav(id, tab) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  if(tab) tab.classList.add('on');
+  if(id==='intel-view') renderNews();
+  if(id==='mkts-view') renderMarkets();
+  if(id==='trade-view') { buildWL(); if(!document.getElementById('tv-fr').src.includes('tradingview')) tvLoad(); }
+  if(id==='port-view') renderPort();
+  if(id==='brief-view') renderBrief();
+  if(id==='ai-view') updateAISt();
+}
+
+// ═══ SETTINGS ═══
+function openCfg() {
+  document.getElementById('s-cl').value=getClaude();
+  document.getElementById('s-oa').value=getOAI();
+  document.getElementById('s-mod').value=getModel();
+  document.getElementById('s-msg').textContent=''; document.getElementById('s-msg').className='mb-msg';
+  document.getElementById('cfg-modal').classList.add('on');
+}
+function closeCfg() { document.getElementById('cfg-modal').classList.remove('on'); }
+function saveCfg() {
+  const cur=document.getElementById('s-cur').value, nw=document.getElementById('s-new').value, co=document.getElementById('s-con').value;
+  const msg=document.getElementById('s-msg');
+  if(nw) {
+    if(hashPw(cur)!==getStoredPw()) { msg.className='mb-msg err'; msg.textContent='WRONG CURRENT PASSWORD'; return; }
+    if(nw!==co) { msg.className='mb-msg err'; msg.textContent='PASSWORDS DO NOT MATCH'; return; }
+    localStorage.setItem(_K.pw, hashPw(nw));
+  }
+  const cl=document.getElementById('s-cl').value.trim();
+  const oa=document.getElementById('s-oa').value.trim();
+  if(cl) localStorage.setItem(_K.cl,cl); else localStorage.removeItem(_K.cl);
+  if(oa) localStorage.setItem(_K.oa,oa); else localStorage.removeItem(_K.oa);
+  localStorage.setItem(_K.md, document.getElementById('s-mod').value);
+  updateAISt();
+  msg.className='mb-msg ok'; msg.textContent='✓ SAVED';
+  setTimeout(closeCfg, 800);
+}
+
+// ═══ TICKER ═══
+const TK = [
+  {s:'SPX',v:'6,127',c:'+0.42%',u:1},{s:'NDX',v:'21,845',c:'-0.18%',u:0},{s:'VIX',v:'18.34',c:'+0.9',u:0},
+  {s:'GOLD',v:'$2,934',c:'+0.67%',u:1},{s:'OIL',v:'$74.82',c:'-1.12%',u:0},{s:'BTC',v:'98,420',c:'+2.14%',u:1},
+  {s:'EUR/USD',v:'1.0842',c:'-0.22%',u:0},{s:'10Y UST',v:'4.42%',c:'+3bp',u:0},{s:'RHM',v:'EUR 831',c:'+2.88%',u:1},
+  {s:'LMT',v:'$468',c:'+1.22%',u:1},{s:'NVDA',v:'$138',c:'+3.41%',u:1},{s:'META',v:'$612',c:'+1.22%',u:1},
+  {s:'XOM',v:'$118',c:'+0.55%',u:1},{s:'CVX',v:'$156',c:'+0.38%',u:1},{s:'TKA',v:'EUR 5.84',c:'-1.20%',u:0},
+];
+function buildTicker() {
+  const t=document.getElementById('tk-track');
+  let h=TK.map(x=>'<span class="tk-i"><span class="tk-s">'+x.s+'</span><span class="tk-v">'+x.v+'</span><span class="tk-c '+(x.u?'u':'d')+'">'+x.c+'</span></span>').join('');
+  t.innerHTML=h+h;
+}
+
+// ═══════════════════════════════════════════════
+// GLOBE — Pure HTML5 Canvas, zero dependencies
+// ═══════════════════════════════════════════════
+const MKS = {
+  portfolio:[
+    {lat:49.21,lng:16.88,sym:'⌂',name:'HQ TVAROZNA',color:'#60a5fa',r:9,detail:{sig:'SECURE',note:'Home Base · Tvarožná · Czech Republic'}},
+    {lat:51.23,lng:6.77, sym:'RHM',name:'RHEINMETALL',color:'#22c55e',r:8,price:'EUR 831',chg:'+2.88%',rev:'EUR 9.4B',bkl:'EUR 52B',sig:'BUY ZONE',sty:'buy'},
+    {lat:38.91,lng:-77.0,sym:'LMT',name:'LOCKHEED',color:'#22c55e',r:8,price:'$468',chg:'+1.22%',rev:'$67.6B',bkl:'$160B+',sig:'BUY ZONE',sty:'buy'},
+    {lat:59.27,lng:16.48,sym:'SAAB',name:'SAAB AB',color:'#22c55e',r:7,price:'SEK 388',chg:'+1.55%',rev:'SEK 23.5B',bkl:'SEK 130B',sig:'BUY ZONE',sty:'buy'},
+    {lat:51.72,lng:-0.34,sym:'BAE',name:'BAE SYSTEMS',color:'#f59e0b',r:7,price:'GBP 12.4',chg:'+0.88%',rev:'£25.3B',bkl:'£66B',sig:'HOLD',sty:'hold'},
+    {lat:48.74,lng:11.43,sym:'HAG',name:'HENSOLDT',color:'#f59e0b',r:6,price:'EUR 36.2',chg:'-0.44%',rev:'EUR 2B',bkl:'EUR 4.8B',sig:'HOLD',sty:'hold'},
+    {lat:51.45,lng:7.01, sym:'TKA',name:'THYSSENKRUPP',color:'#ef4444',r:6,price:'EUR 5.84',chg:'-1.20%',rev:'EUR 35B',bkl:'—',sig:'RISK ZONE',sty:'risk'},
+    {lat:37.37,lng:-122.0,sym:'NVDA',name:'NVIDIA',color:'#3b82f6',r:8,price:'$138',chg:'+3.41%',rev:'$35.1B Q4',bkl:'Blackwell',sig:'BUY ZONE',sty:'buy'},
+    {lat:37.49,lng:-122.1,sym:'META',name:'META',color:'#3b82f6',r:7,price:'$612',chg:'+1.22%',rev:'$164.5B',bkl:'$60B BB',sig:'BUY ZONE',sty:'buy'},
+    {lat:47.64,lng:-122.1,sym:'MSFT',name:'MICROSOFT',color:'#3b82f6',r:7,price:'$418',chg:'+0.88%',rev:'$245B',bkl:'Azure+31%',sig:'HOLD',sty:'hold'},
+    {lat:37.42,lng:-122.1,sym:'GOOGL',name:'GOOGLE',color:'#3b82f6',r:7,price:'$198',chg:'+0.71%',rev:'$339B',bkl:'Cloud+28%',sig:'BUY ZONE',sty:'buy'},
+    {lat:32.89,lng:-97.04,sym:'XOM',name:'EXXONMOBIL',color:'#f59e0b',r:7,price:'$118',chg:'+0.55%',rev:'$398B',bkl:'$35/bbl',sig:'BUY ZONE',sty:'buy'},
+    {lat:37.81,lng:-122.4,sym:'CVX',name:'CHEVRON',color:'#f59e0b',r:7,price:'$156',chg:'+0.38%',rev:'$196B',bkl:'FCF $14B',sig:'BUY ZONE',sty:'buy'},
+    {lat:6.80, lng:-58.16,sym:'STBK',name:'GUYANA/XOM',color:'#f59e0b',r:5,price:'650K bpd',chg:'$35/bbl',detail:{note:'Stabroek — KEY ASSET — lowest cost barrel globally'}},
+  ],
+  war:[
+    {lat:49.0,lng:32.0, sym:'⚔',name:'UKRAINE FRONT',color:'#ef4444',r:11,detail:{note:'Active 1,000km front · F-16 · HIMARS · 800K UA troops · RHM LMT bull thesis ACTIVE'}},
+    {lat:14.0,lng:44.0, sym:'⚔',name:'RED SEA OPS',color:'#ef4444',r:10,detail:{note:'14 Houthi intercepts · USS Eisenhower · LMT AMRAAM demand confirmed · Shipping +$3/bbl'}},
+    {lat:23.0,lng:120.0,sym:'⚠',name:'TAIWAN STRAIT',color:'#f59e0b',r:9,detail:{note:'PLA 3 crossings this month · NVDA/TSMC -30-50% scenario · USS Reagan 7th Fleet'}},
+    {lat:31.5,lng:35.0, sym:'⚔',name:'MIDDLE EAST',color:'#ef4444',r:8,detail:{note:'IDF ops · Hormuz risk · US carrier deterrence · XOM CVX unaffected (offshore)'}},
+    {lat:55.7,lng:37.6, sym:'☢',name:'RUSSIA THREAT',color:'#ef4444',r:9,detail:{note:'SWIFT excluded · S-500 · Kinzhal · Tu-160 · 3000 tanks · Wagner Afrika Corps'}},
+  ],
+  military:[
+    {lat:40.5,lng:-55.0, sym:'⚓',name:'USS FORD CVN-78',color:'#ffffff',r:7,detail:{note:'Ford-class · Atlantic patrol · EMALS · Ready Mediterranean surge'}},
+    {lat:13.5,lng:44.0,  sym:'⚓',name:'USS IKE CVN-69',color:'#ef4444',r:8,detail:{note:'Red Sea HOT OPS · 14 Houthi intercepts · LMT AMRAAM confirmed demand'}},
+    {lat:20.0,lng:140.0, sym:'⚓',name:'USS NIMITZ CVN-68',color:'#ffffff',r:7,detail:{note:'W.Pacific patrol · Taiwan deterrence · SM-3 intercept capable'}},
+    {lat:35.5,lng:139.7, sym:'⚓',name:'USS REAGAN CVN-76',color:'#ffffff',r:7,detail:{note:'Yokosuka Japan · 7th Fleet flagship · Rapid Taiwan/Korea deploy'}},
+    {lat:49.43,lng:7.60, sym:'✈',name:'RAMSTEIN AFB',color:'#ef4444',r:7,detail:{note:'USAF Europe HQ · F-35A · Ukraine coordination · KC-135 · E-3 AWACS'}},
+    {lat:11.6,lng:43.1,  sym:'✈',name:'CAMP LEMONNIER',color:'#ef4444',r:6,detail:{note:'Djibouti · MQ-9 · JSOC · Red Sea SIGINT · Elevated posture'}},
+  ],
+  trade:[
+    {lat:51.23,lng:6.77, sym:'RHM',name:'RHM HQ',color:'#22c55e',r:6},
+    {lat:38.91,lng:-77.0,sym:'LMT',name:'LMT HQ',color:'#22c55e',r:6},
+    {lat:37.37,lng:-122.0,sym:'NVDA',name:'NVDA HQ',color:'#3b82f6',r:6},
+    {lat:6.80, lng:-58.16,sym:'OIL',name:'GUYANA',color:'#f59e0b',r:6},
+  ],
+};
+
+const ARCS = [
+  {from:[51.23,6.77],to:[49.0,32.0],color:'#22c55e',w:2,label:'RHM→Ukraine EUR 1.8B'},
+  {from:[51.23,6.77],to:[52.52,13.4],color:'#22c55e',w:3,label:'RHM→Bundeswehr EUR 4.2B'},
+  {from:[38.91,-77.0],to:[52.23,21.01],color:'#22c55e',w:3,label:'LMT→Poland F-35 $5.2B'},
+  {from:[38.91,-77.0],to:[14.0,44.0],color:'#22c55e',w:2,label:'LMT→Red Sea AMRAAM'},
+  {from:[25.04,121.53],to:[37.37,-122.0],color:'#3b82f6',w:3,label:'TSMC→NVDA CRITICAL'},
+  {from:[37.37,-122.0],to:[47.64,-122.1],color:'#3b82f6',w:2,label:'NVDA→MSFT $10B+'},
+  {from:[6.80,-58.16],to:[38.91,-77.0],color:'#f59e0b',w:3,label:'Guyana→USA 650K bpd'},
+  {from:[6.80,-58.16],to:[51.5,-0.1],color:'#f59e0b',w:2,label:'Guyana→Europe'},
+  {from:[14.0,44.0],to:[29.9,32.5],color:'#ef4444',w:2,label:'Red Sea→Suez DISRUPTED'},
+];
+
+let gCvs, gCtx, sCvs, sCtx;
+let gW, gH, gCX, gCY;
+let gRot = 0.3, gTilt = 0.18, gZoom = 1.0;
+let gDrag = false, gPrevX = 0, gPrevY = 0;
+let gAutoRot = true;
+let gLayer = 'portfolio';
+let gAnimId = null;
+let gClickMks = [];
+
+function ll2xy(lat, lng, rot, tilt) {
+  const lngR = (lng * Math.PI / 180) + rot;
+  const latR = lat * Math.PI / 180;
+  const cosLat = Math.cos(latR - tilt * 0.4);
+  const sinLat = Math.sin(latR - tilt * 0.4);
+  const cosLng = Math.cos(lngR);
+  const sinLng = Math.sin(lngR);
+  // Simple sphere projection
+  const x = cosLat * sinLng;
+  const y = sinLat;
+  const z = cosLat * cosLng;
+  if (z < -0.08) return null; // behind globe
+  const R = gCX * 0.42 * gZoom;
+  const px = gCX + x * R;
+  const py = gCY - y * R;
+  return { x: px, y: py, z };
+}
+
+function drawGlobe() {
+  if (!gCtx) return;
+  gCtx.clearRect(0, 0, gW, gH);
+
+  const R = gCX * 0.42 * gZoom;
+
+  // Earth sphere base
+  const grad = gCtx.createRadialGradient(gCX - R*0.25, gCY - R*0.25, R*0.05, gCX, gCY, R*1.1);
+  grad.addColorStop(0, '#0d1f3c');
+  grad.addColorStop(0.4, '#071428');
+  grad.addColorStop(0.75, '#030a18');
+  grad.addColorStop(1, '#000208');
+  gCtx.beginPath();
+  gCtx.arc(gCX, gCY, R, 0, Math.PI*2);
+  gCtx.fillStyle = grad;
+  gCtx.fill();
+
+  // Lat/lng grid
+  gCtx.strokeStyle = 'rgba(96,165,250,0.06)';
+  gCtx.lineWidth = 0.5;
+  for (let lat = -80; lat <= 80; lat += 20) {
+    gCtx.beginPath();
+    let first = true;
+    for (let lng = -180; lng <= 180; lng += 3) {
+      const p = ll2xy(lat, lng, gRot, gTilt);
+      if (!p) { first=true; continue; }
+      if (first) { gCtx.moveTo(p.x, p.y); first=false; }
+      else gCtx.lineTo(p.x, p.y);
+    }
+    gCtx.stroke();
+  }
+  for (let lng = -180; lng < 180; lng += 30) {
+    gCtx.beginPath();
+    let first = true;
+    for (let lat = -90; lat <= 90; lat += 3) {
+      const p = ll2xy(lat, lng, gRot, gTilt);
+      if (!p) { first=true; continue; }
+      if (first) { gCtx.moveTo(p.x, p.y); first=false; }
+      else gCtx.lineTo(p.x, p.y);
+    }
+    gCtx.stroke();
+  }
+
+  // Equator highlight
+  gCtx.strokeStyle = 'rgba(96,165,250,0.12)';
+  gCtx.lineWidth = 1;
+  gCtx.beginPath();
+  let first = true;
+  for (let lng = -180; lng <= 180; lng += 2) {
+    const p = ll2xy(0, lng, gRot, gTilt);
+    if (!p) { first=true; continue; }
+    if (first) { gCtx.moveTo(p.x, p.y); first=false; }
+    else gCtx.lineTo(p.x, p.y);
+  }
+  gCtx.stroke();
+
+  // Atmosphere glow
+  const atm = gCtx.createRadialGradient(gCX, gCY, R*0.96, gCX, gCY, R*1.18);
+  atm.addColorStop(0, 'rgba(30,80,200,0.22)');
+  atm.addColorStop(0.5, 'rgba(10,40,140,0.08)');
+  atm.addColorStop(1, 'rgba(0,10,60,0)');
+  gCtx.beginPath();
+  gCtx.arc(gCX, gCY, R*1.18, 0, Math.PI*2);
+  gCtx.fillStyle = atm;
+  gCtx.fill();
+
+  // Specular highlight
+  const spec = gCtx.createRadialGradient(gCX - R*0.3, gCY - R*0.35, 0, gCX - R*0.2, gCY - R*0.2, R*0.7);
+  spec.addColorStop(0, 'rgba(150,190,255,0.08)');
+  spec.addColorStop(1, 'rgba(0,0,0,0)');
+  gCtx.beginPath();
+  gCtx.arc(gCX, gCY, R, 0, Math.PI*2);
+  gCtx.fillStyle = spec;
+  gCtx.fill();
+
+  // Draw arcs (for trade layer)
+  if (gLayer === 'trade') {
+    ARCS.forEach(arc => drawArc(arc));
+  }
+
+  // Draw war zone circles
+  if (gLayer === 'war') {
+    const warZones = [{lat:49.0,lng:32.0,r:3.5},{lat:14.0,lng:44.0,r:2.8},{lat:23.0,lng:120.0,r:2.5},{lat:31.5,lng:35.0,r:2.2}];
+    warZones.forEach(wz => {
+      const center = ll2xy(wz.lat, wz.lng, gRot, gTilt);
+      if (!center) return;
+      const edge = ll2xy(wz.lat, wz.lng + wz.r * 1.5, gRot, gTilt);
+      if (!edge) return;
+      const pr = Math.abs(edge.x - center.x) * 0.7;
+      gCtx.beginPath();
+      gCtx.arc(center.x, center.y, pr, 0, Math.PI*2);
+      gCtx.fillStyle = 'rgba(239,68,68,0.06)';
+      gCtx.fill();
+      gCtx.strokeStyle = 'rgba(239,68,68,0.3)';
+      gCtx.lineWidth = 1;
+      gCtx.stroke();
+    });
+  }
+
+  // Draw markers
+  const markers = MKS[gLayer] || MKS.portfolio;
+  gClickMks = [];
+  const t = Date.now() * 0.001;
+
+  markers.forEach(mk => {
+    const p = ll2xy(mk.lat, mk.lng, gRot, gTilt);
+    if (!p) return;
+
+    const br = mk.r * gZoom;
+    gClickMks.push({ x:p.x, y:p.y, r:br+6, data:mk });
+
+    // Pulse ring
+    const pulse = 0.7 + 0.3 * Math.sin(t * 2.5 + mk.lng * 0.05);
+    gCtx.beginPath();
+    gCtx.arc(p.x, p.y, br * (1.8 + pulse * 0.6), 0, Math.PI*2);
+    gCtx.strokeStyle = mk.color + '28';
+    gCtx.lineWidth = 1;
+    gCtx.stroke();
+
+    // Outer ring
+    gCtx.beginPath();
+    gCtx.arc(p.x, p.y, br * 1.4, 0, Math.PI*2);
+    gCtx.strokeStyle = mk.color + '55';
+    gCtx.lineWidth = 1.2;
+    gCtx.stroke();
+
+    // Core dot
+    gCtx.beginPath();
+    gCtx.arc(p.x, p.y, br, 0, Math.PI*2);
+    gCtx.fillStyle = mk.color + 'cc';
+    gCtx.fill();
+    gCtx.strokeStyle = mk.color;
+    gCtx.lineWidth = 1.5;
+    gCtx.stroke();
+
+    // Label
+    if (gZoom >= 0.8) {
+      gCtx.fillStyle = mk.color;
+      gCtx.font = 'bold ' + Math.round(8 * gZoom) + 'px Courier New';
+      gCtx.textAlign = 'center';
+      gCtx.textBaseline = 'bottom';
+      gCtx.shadowColor = '#000';
+      gCtx.shadowBlur = 4;
+      gCtx.fillText(mk.sym, p.x, p.y - br - 4);
+      gCtx.shadowBlur = 0;
+    }
+  });
+
+  // Globe border clip
+  gCtx.beginPath();
+  gCtx.arc(gCX, gCY, R, 0, Math.PI*2);
+  gCtx.strokeStyle = 'rgba(96,165,250,0.15)';
+  gCtx.lineWidth = 1.5;
+  gCtx.stroke();
+}
+
+function drawArc(arc) {
+  const pts = [];
+  for (let i=0; i<=40; i++) {
+    const t = i/40;
+    const lat = arc.from[0] + (arc.to[0]-arc.from[0])*t;
+    const lng = arc.from[1] + (arc.to[1]-arc.from[1])*t;
+    const p = ll2xy(lat, lng, gRot, gTilt);
+    if (p) pts.push(p);
+  }
+  if (pts.length < 2) return;
+  gCtx.beginPath();
+  gCtx.moveTo(pts[0].x, pts[0].y);
+  for (let i=1; i<pts.length; i++) gCtx.lineTo(pts[i].x, pts[i].y);
+  gCtx.strokeStyle = arc.color + 'aa';
+  gCtx.lineWidth = arc.w;
+  gCtx.stroke();
+  // Arrow at end
+  const last = pts[pts.length-1], prev = pts[pts.length-2];
+  if (last && prev) {
+    const angle = Math.atan2(last.y-prev.y, last.x-prev.x);
+    gCtx.beginPath();
+    gCtx.moveTo(last.x + Math.cos(angle-0.5)*8, last.y + Math.sin(angle-0.5)*8);
+    gCtx.lineTo(last.x, last.y);
+    gCtx.lineTo(last.x + Math.cos(angle+0.5)*8, last.y + Math.sin(angle+0.5)*8);
+    gCtx.strokeStyle = arc.color;
+    gCtx.lineWidth = arc.w;
+    gCtx.stroke();
+  }
+}
+
+function drawStars() {
+  if (!sCtx) return;
+  sCtx.fillStyle = '#000';
+  sCtx.fillRect(0, 0, gW, gH);
+  const starData = [];
+  const sr = Math.random()+42; // seeded-ish
+  for(let i=0;i<280;i++) {
+    starData.push({
+      x: (Math.sin(i*2.3)*0.5+0.5)*gW,
+      y: (Math.cos(i*1.7)*0.5+0.5)*gH,
+      r: Math.random()*1.2+0.2,
+      a: Math.random()*0.6+0.3
+    });
+  }
+  starData.forEach(s=>{
+    sCtx.beginPath();
+    sCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sCtx.fillStyle='rgba(255,255,255,'+s.a+')';
+    sCtx.fill();
+  });
+}
+
+function globeAnimate() {
+  if (gAutoRot) gRot += 0.0008;
+  drawGlobe();
+  gAnimId = requestAnimationFrame(globeAnimate);
+}
+
+function initGlobe() {
+  gCvs = document.getElementById('gcanvas');
+  sCvs = document.getElementById('starfield');
+  if (!gCvs || !sCvs) return;
+  gCtx = gCvs.getContext('2d');
+  sCtx = sCvs.getContext('2d');
+
+  const resize = () => {
+    const view = document.getElementById('globe-view');
+    gW = view.offsetWidth;
+    gH = view.offsetHeight;
+    gCX = gW / 2; gCY = gH / 2;
+    gCvs.width = gW; gCvs.height = gH;
+    sCvs.width = gW; sCvs.height = gH;
+    drawStars();
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Mouse / Touch events
+  gCvs.addEventListener('mousedown', e => { gDrag=true; gPrevX=e.clientX; gPrevY=e.clientY; });
+  gCvs.addEventListener('mousemove', e => {
+    if (!gDrag) return;
+    gRot += (e.clientX - gPrevX) * 0.008;
+    gTilt += (e.clientY - gPrevY) * 0.003;
+    gTilt = Math.max(-0.6, Math.min(0.6, gTilt));
+    gPrevX=e.clientX; gPrevY=e.clientY;
+  });
+  gCvs.addEventListener('mouseup', e => {
+    if (!gDrag) return;
+    // Check click on marker
+    const rect = gCvs.getBoundingClientRect();
+    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+    let hit = null;
+    for(let i=gClickMks.length-1;i>=0;i--) {
+      const m = gClickMks[i];
+      if (Math.hypot(mx-m.x, my-m.y) < m.r) { hit=m.data; break; }
+    }
+    if (hit) showGTip(hit, e.clientX, e.clientY);
+    else hideGTip();
+    gDrag=false;
+  });
+  gCvs.addEventListener('mouseleave', ()=>gDrag=false);
+
+  // Touch
+  let tPrev = null;
+  gCvs.addEventListener('touchstart', e=>{ e.preventDefault(); if(e.touches.length===1) tPrev={x:e.touches[0].clientX,y:e.touches[0].clientY}; },{passive:false});
+  gCvs.addEventListener('touchmove', e=>{ e.preventDefault(); if(!tPrev||e.touches.length!==1) return;
+    gRot += (e.touches[0].clientX-tPrev.x)*0.008;
+    gTilt += (e.touches[0].clientY-tPrev.y)*0.003;
+    gTilt = Math.max(-0.6, Math.min(0.6, gTilt));
+    tPrev={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    gAutoRot=false; },{passive:false});
+  gCvs.addEventListener('touchend', e=>{
+    if(e.changedTouches.length===1) {
+      const rect=gCvs.getBoundingClientRect();
+      const mx=e.changedTouches[0].clientX-rect.left, my=e.changedTouches[0].clientY-rect.top;
+      let hit=null;
+      for(let i=gClickMks.length-1;i>=0;i--) { const m=gClickMks[i]; if(Math.hypot(mx-m.x,my-m.y)<m.r+10) { hit=m.data; break; } }
+      if(hit) showGTip(hit, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      else hideGTip();
+    }
+    tPrev=null;
+  });
+
+  // Wheel zoom
+  gCvs.addEventListener('wheel', e=>{ e.preventDefault(); gZoom=Math.max(0.5,Math.min(3,gZoom-(e.deltaY>0?0.1:-0.1))); },{passive:false});
+
+  if (gAnimId) cancelAnimationFrame(gAnimId);
+  globeAnimate();
+}
+
+function showGTip(d, cx, cy) {
+  const tip = document.getElementById('gtip');
+  const sigC = {buy:'buy',hold:'hold',risk:'risk'};
+  let h = '<div class="gt-name">' + d.name + '</div>';
+  if (d.price) {
+    h += '<div class="gt-meta">' + (d.sym||'') + '</div>';
+    h += '<div class="gt-row"><span class="gt-k">PRICE</span><span class="gt-v">' + d.price + '</span></div>';
+    h += '<div class="gt-row"><span class="gt-k">1D</span><span class="gt-v" style="color:'+(d.chg&&d.chg[0]==='-'?'#ef4444':'#22c55e')+'">' + d.chg + '</span></div>';
+    if (d.rev) h += '<div class="gt-row"><span class="gt-k">REVENUE</span><span class="gt-v">' + d.rev + '</span></div>';
+    if (d.bkl) h += '<div class="gt-row"><span class="gt-k">BACKLOG</span><span class="gt-v">' + d.bkl + '</span></div>';
+    if (d.sig) h += '<div class="gt-sig ' + (sigC[d.sty]||'hold') + '">' + d.sig + '</div>';
+  } else if (d.detail) {
+    h += '<div class="gt-row" style="display:block;border:none;padding-top:4px"><span style="font-size:7px;color:#888;line-height:1.6">' + d.detail.note + '</span></div>';
+  }
+  tip.innerHTML = h;
+  tip.style.display = 'block';
+  // Position
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let tx = cx + 14, ty = cy - 10;
+  if (tx + 260 > vw) tx = cx - 264;
+  if (ty + tip.offsetHeight > vh - 30) ty = cy - tip.offsetHeight - 10;
+  tip.style.left = tx + 'px';
+  tip.style.top  = ty + 'px';
+}
+function hideGTip() { document.getElementById('gtip').style.display='none'; }
+
+function setLayer(l, btn) {
+  gLayer = l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  hideGTip();
+  const labels = {portfolio:'PORTFOLIO HQ',war:'WAR ZONES',military:'MILITARY ASSETS',trade:'TRADE ROUTES'};
+  const el=document.getElementById('h-layer'); if(el) el.textContent=labels[l]||l.toUpperCase();
+}
+
+function gZoomIn()  { gZoom = Math.min(3, gZoom+0.2); }
+function gZoomOut() { gZoom = Math.max(0.5, gZoom-0.2); }
+function gReset()   { gRot=0.3; gTilt=0.18; gZoom=1.0; }
+function gToggleRot() { gAutoRot=!gAutoRot; const b=document.getElementById('rot-btn'); if(b) b.classList.toggle('on',gAutoRot); }
+
+function openWindy()  { window.open('https://www.windy.com/?49.21,16.88,5','_blank'); }
+function openMarine() { window.open('https://www.marinetraffic.com/en/ais/home/centerx:16.88/centery:49.19/zoom:5','_blank'); }
+
+// ═══ NEWS ═══
+const NEWS = [
+  {src:'WSJ',cls:'wsj',t:'F-35 Poland 145 Aircraft $5.2B — LMT Backlog $160B+',d:'Delivery 2027-2030. NATO standardization. Institutions accumulating LMT.',tag:'DEFENSE',s:['def'],ai:1,sig:'up',url:'https://wsj.com',img:'https://images.unsplash.com/photo-1569629743817-70d8db6c323b?w=400&q=60'},
+  {src:'BLOOMBERG',cls:'blg',t:'Rheinmetall EUR 4.2B Bundeswehr Contract — Backlog EUR 52B',d:'Multi-year deal locked. Germany 2% GDP confirmed. Structural bull.',tag:'DEFENSE',s:['def'],ai:1,sig:'up',url:'https://bloomberg.com',img:'https://images.unsplash.com/photo-1562408590-e32931084e23?w=400&q=60'},
+  {src:"BARRON'S",cls:'bar',t:'NVIDIA Blackwell: $200B AI Capex Is Year One',d:'MSFT META GOOGL AMZN committed record infra. DC +120% YoY.',tag:'AI/TECH',s:['tech'],ai:1,sig:'up',url:'https://barrons.com',img:'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=60'},
+  {src:'BLOOMBERG',cls:'blg',t:'USS Gravely: 14th Houthi Intercept — AMRAAM Demand Confirmed',d:'Red Sea ops tempo unchanged. LMT demand structural.',tag:'GEOPOLITICS',s:['geo','def'],ai:1,sig:'up',url:'https://bloomberg.com',img:'https://images.unsplash.com/photo-1545987796-200677ee1011?w=400&q=60'},
+  {src:'WSJ',cls:'wsj',t:'Fed: Data-Dependent — Thursday PCE Core Decisive',d:'2 cuts priced 2025. VIX 18. Defense outperforms all scenarios.',tag:'MACRO',s:['macro'],ai:0,sig:'neutral',url:'https://wsj.com',img:'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=60'},
+  {src:'BLOOMBERG',cls:'blg',t:'ExxonMobil Guyana: $35/bbl Breakeven — 2025 Outperformance',d:'Stabroek 650K bpd. Pioneer synergies $2B+. Div 3.4%.',tag:'OIL',s:['oil'],ai:1,sig:'up',url:'https://bloomberg.com',img:'https://images.unsplash.com/photo-1537884944318-390069bb8665?w=400&q=60'},
+  {src:"BARRON'S",cls:'bar',t:'SAAB: Sweden NATO Entry — Decade Investment Case',d:'Gripen-E pipeline. GlobalEye UAE. NATO premium re-rate.',tag:'DEFENSE',s:['def'],ai:1,sig:'up',url:'https://barrons.com',img:'https://images.unsplash.com/photo-1567361808960-dec9cb578182?w=400&q=60'},
+  {src:'BLOOMBERG',cls:'blg',t:'PLA: Third Taiwan Strait Crossing — 7th Fleet Alert',d:'TSMC risk = NVDA -30-50% scenario. Stress tests running.',tag:'GEOPOLITICS',s:['geo'],ai:1,sig:'neutral',url:'https://bloomberg.com',img:'https://images.unsplash.com/photo-1539701938214-0d9736e1c16b?w=400&q=60'},
+  {src:'FT',cls:'ft',t:'ThyssenKrupp: EUR 3B Write-Down Risk — Steel Dumping -25%',d:'Every EUR in TKA = opportunity cost vs RHM +44% YTD.',tag:'DEFENSE',s:['def'],ai:1,sig:'dn',url:'https://ft.com',img:'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400&q=60'},
+  {src:'BLOOMBERG',cls:'blg',t:'Gold ATH $2,934 — Goldman Target $3,100',d:'Central banks 1,035T. Geopolitical hedge structural.',tag:'MACRO',s:['macro','geo'],ai:1,sig:'up',url:'https://bloomberg.com',img:'https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400&q=60'},
+  {src:'WSJ',cls:'wsj',t:'NATO: 23/32 Members Above 2% GDP Defense Spend',d:'Structural rearmament confirmed decade. Poland 4%. Germany EUR 100B.',tag:'GEOPOLITICS',s:['geo','def'],ai:1,sig:'up',url:'https://wsj.com',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=60'},
+  {src:'FT',cls:'ft',t:'Meta: Llama 4 Enterprise AI — $60B Buyback Active',d:'Open-source captures enterprise. Ray-Ban sold out.',tag:'AI/TECH',s:['tech'],ai:0,sig:'up',url:'https://ft.com',img:'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&q=60'},
+];
+
+let nFilter='all';
+function filterNews(f,btn) { nFilter=f; document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on')); if(btn) btn.classList.add('on'); renderNews(); }
+function renderNews() {
+  const g=document.getElementById('ngrid'); if(!g) return;
+  const items=NEWS.filter(n=>nFilter==='all'||n.s.includes(nFilter));
+  const sc={up:'#22c55e',dn:'#ef4444',neutral:'#f59e0b'};
+  const sl={up:'BULLISH ▲',dn:'BEARISH ▼',neutral:'NEUTRAL ◆'};
+  g.innerHTML=items.map(n=>'<a class="nc" href="'+n.url+'" target="_blank" rel="noopener">'+
+    (n.ai?'<div class="nc-ai">AI EYE</div>':'')+
+    '<div class="nc-src"><span class="'+n.cls+'">'+n.src+'</span><span style="color:#444;font-size:6px;letter-spacing:1px">'+n.tag+'</span></div>'+
+    '<div class="nc-img"><img src="'+n.img+'" loading="lazy" onerror="this.parentNode.style.display=\'none\'" alt=""></div>'+
+    '<div class="nc-t">'+n.t+'</div>'+
+    '<div class="nc-d">'+n.d+'</div>'+
+    '<div class="nc-ft"><span class="nc-tag">READ →</span><span style="color:'+sc[n.sig||'neutral']+';font-size:7px">'+sl[n.sig||'neutral']+'</span></div>'+
+    '</a>').join('');
+}
+
+// ═══ MARKETS ═══
+function renderMarkets() {
+  const kpis=[
+    {v:'6,127',k:'S&P 500',c:'+0.42%',vc:'g',cc:'u'},{v:'21,845',k:'NASDAQ',c:'-0.18%',vc:'r',cc:'d'},
+    {v:'18.34',k:'VIX',c:'+0.90',vc:'a',cc:'n'},{v:'$2,934',k:'GOLD',c:'+0.67% ATH',vc:'g',cc:'u'},
+    {v:'$74.82',k:'OIL WTI',c:'-1.12%',vc:'r',cc:'d'},{v:'4.42%',k:'10Y YIELD',c:'+3bp',vc:'a',cc:'n'},
+  ];
+  const ke=document.getElementById('kpis');
+  if(ke) ke.innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-v '+k.vc+'">'+k.v+'</div><div class="kpi-k">'+k.k+'</div><div class="kpi-c '+k.cc+'">'+k.c+'</div></div>').join('');
+  setTimeout(()=>{drawPortChart();drawSectorChart();drawRRChart();drawDefChart();},60);
+}
+
+function drawPortChart() {
+  const cv=document.getElementById('cv-p'); if(!cv) return;
+  cv.width=cv.offsetWidth*2; cv.height=cv.offsetHeight*2;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  const data=[100,98,103,108,105,112,118,114,122,128,124,135];
+  const labs=['F','M','A','M','J','J','A','S','O','N','D','J'];
+  ctx.clearRect(0,0,W,H);
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn;
+  const pts=data.map((v,i)=>[(i/(data.length-1))*(W*0.92)+W*0.04,H-((v-mn)/rng)*(H*0.76)-H*0.12]);
+  // Fill
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  pts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+  ctx.lineTo(pts[pts.length-1][0],H); ctx.lineTo(pts[0][0],H); ctx.closePath();
+  ctx.fillStyle='rgba(34,197,94,0.08)'; ctx.fill();
+  // Line
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  pts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+  ctx.strokeStyle='#22c55e'; ctx.lineWidth=3; ctx.stroke();
+  pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p[0],p[1],4,0,Math.PI*2); ctx.fillStyle='#22c55e'; ctx.fill(); });
+  ctx.fillStyle='#555'; ctx.font='14px Courier New'; ctx.textAlign='center';
+  pts.forEach((p,i)=>{ if(i%2===0) ctx.fillText(labs[i],p[0],H-4); });
+}
+
+function drawSectorChart() {
+  const cv=document.getElementById('cv-s'); if(!cv) return;
+  cv.width=cv.offsetWidth*2; cv.height=cv.offsetHeight*2;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const secs=[{l:'DEFENSE',p:0.30,c:'#22c55e'},{l:'TECH/AI',p:0.30,c:'#3b82f6'},{l:'OIL',p:0.20,c:'#f59e0b'},{l:'CORE',p:0.20,c:'#a78bfa'}];
+  const cx=W/2,cy=H/2,r=Math.min(W,H)*0.34;
+  let start=-Math.PI/2;
+  secs.forEach(s=>{
+    const end=start+s.p*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+    ctx.fillStyle=s.c+'25'; ctx.fill(); ctx.strokeStyle=s.c; ctx.lineWidth=3; ctx.stroke();
+    const mid=start+(end-start)/2;
+    const lx=cx+(r+26)*Math.cos(mid),ly=cy+(r+26)*Math.sin(mid);
+    ctx.fillStyle=s.c; ctx.font='bold 18px Courier New'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(Math.round(s.p*100)+'%',lx,ly);
+    ctx.font='12px Courier New'; ctx.fillStyle='#777'; ctx.fillText(s.l,lx,ly+20);
+    start=end;
+  });
+}
+
+function drawRRChart() {
+  const cv=document.getElementById('cv-r'); if(!cv) return;
+  cv.width=cv.offsetWidth*2; cv.height=cv.offsetHeight*2;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#111'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  const pts=[
+    {sym:'RHM',ret:28,risk:9,c:'#22c55e'},{sym:'LMT',ret:12,risk:8,c:'#22c55e'},{sym:'SAAB',ret:18,risk:10,c:'#22c55e'},
+    {sym:'NVDA',ret:35,risk:22,c:'#3b82f6'},{sym:'META',ret:18,risk:14,c:'#3b82f6'},
+    {sym:'XOM',ret:8,risk:6,c:'#f59e0b'},{sym:'CVX',ret:7,risk:5,c:'#f59e0b'},
+    {sym:'TKA',ret:-18,risk:20,c:'#ef4444'},{sym:'BAE',ret:10,risk:7,c:'#22c55e'},
+  ];
+  pts.forEach(p=>{
+    const x=(p.ret+25)/65*W, y=H-(p.risk/28)*H*0.85-H*0.07;
+    ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle=p.c; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 16px Courier New'; ctx.textAlign='center';
+    ctx.fillText(p.sym,x,y-13);
+  });
+}
+
+function drawDefChart() {
+  const cv=document.getElementById('cv-d'); if(!cv) return;
+  cv.width=cv.offsetWidth*2; cv.height=cv.offsetHeight*2;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const def=[100,102,106,111,117,122,128,133,140,148,155,162];
+  const sp=[100,101,103,106,108,110,112,114,117,120,122,125];
+  function dl(data,col) {
+    const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn;
+    const pts=data.map((v,i)=>[(i/(data.length-1))*(W*0.9)+W*0.05,H-((v-mn)/rng)*(H*0.75)-H*0.15]);
+    ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+    pts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.stroke();
+  }
+  dl(def,'#22c55e'); dl(sp,'#60a5fa');
+  ctx.fillStyle='#22c55e'; ctx.font='bold 16px Courier New'; ctx.textAlign='left'; ctx.fillText('■ DEFENSE',20,26);
+  ctx.fillStyle='#60a5fa'; ctx.fillText('■ S&P500',W/2+10,26);
+}
+
+// ═══ TRADING ═══
+const WL=[
+  {s:'RHM',p:'EUR 831',c:'+2.88%',u:1,tv:'XETR:RHM'},{s:'LMT',p:'$468',c:'+1.22%',u:1,tv:'NASDAQ:LMT'},
+  {s:'SAAB',p:'SEK 388',c:'+1.55%',u:1,tv:'OMX:SAAB_B'},{s:'BAE',p:'GBP 12.4',c:'+0.88%',u:1,tv:'LSE:BA'},
+  {s:'HAG',p:'EUR 36.2',c:'-0.44%',u:0,tv:'XETR:HAG'},{s:'TKA',p:'EUR 5.84',c:'-1.20%',u:0,tv:'XETR:TKA'},
+  {s:'NVDA',p:'$138',c:'+3.41%',u:1,tv:'NASDAQ:NVDA'},{s:'META',p:'$612',c:'+1.22%',u:1,tv:'NASDAQ:META'},
+  {s:'MSFT',p:'$418',c:'+0.88%',u:1,tv:'NASDAQ:MSFT'},{s:'GOOGL',p:'$198',c:'+0.71%',u:1,tv:'NASDAQ:GOOGL'},
+  {s:'XOM',p:'$118',c:'+0.55%',u:1,tv:'NYSE:XOM'},{s:'CVX',p:'$156',c:'+0.38%',u:1,tv:'NYSE:CVX'},
+  {s:'GOLD',p:'$2934',c:'+0.67%',u:1,tv:'TVC:GOLD'},{s:'OIL',p:'$74.82',c:'-1.12%',u:0,tv:'TVC:USOIL'},
+  {s:'VIX',p:'18.34',c:'+0.9',u:0,tv:'CBOE:VIX'},{s:'BTC',p:'98,420',c:'+2.14%',u:1,tv:'BITSTAMP:BTCUSD'},
+];
+function buildWL() {
+  const el=document.getElementById('wl-list'); if(!el||el.children.length) return;
+  el.innerHTML=WL.map(w=>'<div class="wl-r" onclick="tvS(\''+w.tv+'\')">' +
+    '<div><div class="wl-sym">'+w.s+'</div><div class="wl-c '+(w.u?'u':'d')+'">'+w.c+'</div></div>'+
+    '<div class="wl-p">'+w.p+'</div></div>').join('');
+}
+function tvS(sym){document.getElementById('tv-sym').value=sym;tvLoad();}
+function tvLoad(){
+  const sym=document.getElementById('tv-sym').value.trim()||'XETR:RHM';
+  document.getElementById('tv-fr').src='https://www.tradingview.com/widgetembed/?frameElementId=tv-fr&symbol='+encodeURIComponent(sym)+'&interval=D&theme=dark&style=1&timezone=Europe%2FPrague&withdateranges=1&showpopupbutton=1&studies=RSI%40tv-basicstudies%1FBB%40tv-basicstudies%1FMACD%40tv-basicstudies&locale=en&allow_symbol_change=1';
+}
+
+// ═══ PORTFOLIO ═══
+const POS=[
+  {sym:'RHM',sec:'DEFENSE',co:'DE',p:'EUR 831',c:'+2.88%',u:1,sh:150,sig:'BUY ZONE',sc:'buy',n:'EUR 52B backlog locked'},
+  {sym:'LMT',sec:'DEFENSE',co:'US',p:'$468',c:'+1.22%',u:1,sh:80,sig:'BUY ZONE',sc:'buy',n:'F-35 Poland $5.2B'},
+  {sym:'SAAB',sec:'DEFENSE',co:'SE',p:'SEK 388',c:'+1.55%',u:1,sh:200,sig:'BUY ZONE',sc:'buy',n:'NATO re-rate structural'},
+  {sym:'BAE',sec:'DEFENSE',co:'UK',p:'GBP 12.4',c:'+0.88%',u:1,sh:120,sig:'HOLD',sc:'hold',n:'AUKUS watch — stable'},
+  {sym:'HAG',sec:'DEFENSE',co:'DE',p:'EUR 36.2',c:'-0.44%',u:0,sh:90,sig:'HOLD',sc:'hold',n:'Radar order pending'},
+  {sym:'TKA',sec:'STEEL',co:'DE',p:'EUR 5.84',c:'-1.20%',u:0,sh:100,sig:'RISK ZONE',sc:'risk',n:'→ Rotate to RHM NOW'},
+  {sym:'NVDA',sec:'AI/TECH',co:'US',p:'$138',c:'+3.41%',u:1,sh:50,sig:'BUY ZONE',sc:'buy',n:'Blackwell cycle starting'},
+  {sym:'META',sec:'AI/TECH',co:'US',p:'$612',c:'+1.22%',u:1,sh:30,sig:'BUY ZONE',sc:'buy',n:'$60B buyback active'},
+  {sym:'MSFT',sec:'TECH',co:'US',p:'$418',c:'+0.88%',u:1,sh:25,sig:'HOLD',sc:'hold',n:'Azure +31% YoY'},
+  {sym:'GOOGL',sec:'AI/TECH',co:'US',p:'$198',c:'+0.71%',u:1,sh:20,sig:'BUY ZONE',sc:'buy',n:'Cloud +28% Waymo opt.'},
+  {sym:'XOM',sec:'OIL',co:'US',p:'$118',c:'+0.55%',u:1,sh:60,sig:'BUY ZONE',sc:'buy',n:'Guyana $35/bbl'},
+  {sym:'CVX',sec:'OIL',co:'US',p:'$156',c:'+0.38%',u:1,sh:40,sig:'BUY ZONE',sc:'buy',n:'FCF $14B · Div 4.1%'},
+];
+function renderPort() {
+  const el=document.getElementById('pt'); if(!el) return;
+  el.innerHTML='<thead><tr><th>SYM</th><th>SECTOR</th><th>COUNTRY</th><th>PRICE</th><th>1D</th><th>SHARES</th><th>SIGNAL</th><th>INTEL</th></tr></thead><tbody>'+
+    POS.map(p=>'<tr><td><span class="pt-sym">'+p.sym+'</span></td><td style="font-size:7px;color:#555;letter-spacing:1px">'+p.sec+'</td><td style="font-size:7px;color:#444">'+p.co+'</td><td style="font-size:9px">'+p.p+'</td><td style="color:'+(p.u?'#22c55e':'#ef4444')+';font-size:8px">'+p.c+'</td><td style="font-size:8px;color:#777">'+p.sh+'</td><td><span class="pt-'+p.sc+'">'+p.sig+'</span></td><td style="font-size:7px;color:#555">'+p.n+'</td></tr>').join('')+'</tbody>';
+}
+
+// ═══ BRIEFING ═══
+function renderBrief() {
+  const de=document.getElementById('bm-date'); if(de) { const n=new Date(); const days=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY']; const mons=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']; de.textContent=days[n.getDay()]+' '+String(n.getDate()).padStart(2,'0')+' '+mons[n.getMonth()]+' '+n.getFullYear(); }
+  const g=document.getElementById('brief-g'); if(!g) return;
+  g.innerHTML=
+    '<div class="bc"><div class="bc-t">THIS WEEK — KEY EVENTS</div>'+
+    '<div class="bce"><span class="dot r"></span><span><b>THURSDAY</b> — Fed Core PCE 08:30 ET — decisive for 2025 rate path</span></div>'+
+    '<div class="bce"><span class="dot r"></span><span><b>ECB -25bp</b> expected — EUR/USD pressure at 1.08 support</span></div>'+
+    '<div class="bce"><span class="dot g"></span><span><b>NVDA EARNINGS</b> — Blackwell cycle confirmation — do NOT miss</span></div>'+
+    '<div class="bce"><span class="dot r"></span><span><b>RED SEA</b> — USS Eisenhower ops · 14 Houthi intercepts confirmed</span></div>'+
+    '</div>'+
+    '<div class="bc"><div class="bc-t">DEFENDER SIGNALS</div>'+
+    [['RHM','g','BUY ZONE','EUR 52B backlog'],['LMT','g','BUY ZONE','Poland F-35 locked'],['NVDA','g','BUY ZONE','Blackwell starting'],['SAAB','g','BUY ZONE','NATO structural'],['XOM','g','BUY ZONE','Guyana $35/bbl'],['TKA','r','RISK ZONE','Rotate NOW'],['META','g','BUY ZONE','$60B buyback'],['CVX','g','BUY ZONE','FCF $14B 4.1% div']].map(s=>'<div class="bcs"><span class="bcs-sym">'+s[0]+'</span><span class="bcs-z '+s[1]+'">'+s[2]+'</span><span class="bcs-n">'+s[3]+'</span></div>').join('')+
+    '</div>'+
+    '<div class="bc" style="grid-column:1/-1"><div class="bc-t">STRATEGIC SENTENCE</div>'+
+    '<div class="bc-q">"Institutions accumulate defense quietly while retail panics on headlines. NATO rearmament is a 10-year structural trade. Your RHM LMT SAAB positioning is institutional-grade. Hold. Add on dips. Never sell on pullbacks under 5%."</div>'+
+    '<div class="bc-rule"><span class="dot r"></span>NEVER sell LMT/RHM on pullback &lt;5% — that is institutional accumulation</div>'+
+    '<div class="bc-rule"><span class="dot a"></span>ROTATE TKA → RHM — 62pp opportunity cost bled since Oct 2024</div>'+
+    '<div class="bc-rule"><span class="dot g"></span>GOLD ATH $2,934 — central banks 1,035T/year — geopolitical hedge building</div>'+
+    '</div>';
+}
+
+// ═══ AI ═══
+const SYS_PROMPT = `You are DEFENDER — private institutional investment AI for Jakub Skladany (Kubo), age 20, Czech Republic.
+
+Style: BlackRock Aladdin × Bloomberg Terminal × Bridgewater. Zero emotions, pure data.
+
+PORTFOLIO (~130,000 CZK):
+DEFENSE 30K: LMT(80sh) RHM(150sh) SAAB(200sh) BAE(120sh) HAG(90sh) TKA(100sh — RISK)
+TECH/AI 30K: NVDA(50sh) META(30sh) MSFT(25sh) GOOGL(20sh)
+OIL 20K: XOM(60sh) CVX(40sh)
+CORE 50K: S&P500 ETF + Dividend Kings + DCA 500 CZK/month
+
+MISSION: Generational wealth — family companies and investment funds. TERREN (micro excavator firm) business plan exists.
+
+RULES:
+1. Respond in the same language as question (Czech or English)
+2. Institutional style — no emotions, only data and probabilities
+3. End every response with 📐 DEFENDER TEACHES: [one insight]
+4. Never validate lazy thinking — push Jakub to think deeper
+
+COMMANDS: MORNING BRIEFING, FRIDAY CLOSE, SIMULATION [scenario], PLAN FOR [ticker], TKA DECISION, SUNDAY RESET`;
+
+const OFFLINE = {
+  'morning briefing': `🛡 DEFENDER — MORNING BRIEFING\n\n1️⃣ MACRO:\n🔴 Red Sea: 14 intercepts. LMT AMRAAM demand confirmed.\n🔴 Ukraine: NATO BRAVO. RHM SAAB LMT 10Y bull intact.\n🟡 Taiwan: PLA crossing #3. NVDA stress test running.\n🟡 Fed: Core PCE Thursday. 2 cuts priced 2025.\n\n2️⃣ PORTFOLIO:\n🟢 RHM +2.88% — Top conviction. EUR 52B backlog locked.\n🟢 LMT +1.22% — Poland F-35 confirmed. No sell.\n🟢 NVDA +3.41% — Blackwell just starting. HOLD minimum 18M.\n🔴 TKA -1.20% — Opportunity cost bleeding. Rotate to RHM.\n\n3️⃣ TODAY:\nThursday PCE → if <2.7% = rate cut closer = growth assets up.\n\n📐 DEFENDER TEACHES: VIX 18 = institutions nervous but not scared. Buy zone starts below VIX 20. NEVER sell LMT/RHM on VIX spike — that is institutional accumulation.`,
+  'simulation': `⚡ DEFENDER — NATO ESCALATION SIMULATION\n\n📊 PROBABILITY: 23% / 18 months\n\nPHASE 1 — PANIC (Day 0-14):\nAll assets -15-25% · Correlation = 1.0 · Retail sells everything\n\nPHASE 2 — DIFFERENTIATION (Day 14-60):\n🟢 LMT: +35-55% (F-35 acceleration)\n🟢 RHM: +30-45% (Bundeswehr emergency)\n🟢 SAAB: +25-40% (NATO standardization)\n🔴 NVDA: -30-50% (Taiwan supply risk)\n🟡 XOM: ±5% (Guyana offshore unaffected)\n\nPHASE 3 (Month 3-6): Defense permanently re-rated. NATO 3-4% GDP new standard.\n\n📐 DEFENDER TEACHES: BlackRock runs this monthly. Their action: BUY defense in Phase 1 panic. Your job: keep 15% cash reserve for Phase 1 dips in LMT/RHM.`,
+  'plan for rhm': `🎯 DEFENDER — PLAN FOR RHM\n\nBACKLOG: EUR 52B — 3+ year revenue visibility\nBundeswehr: EUR 4.2B locked\nRevenue 2025E: EUR 15B+ (+35% YoY)\n\nFAIR VALUE:\nDCF (8% disc, 25% growth 3Y): EUR 940-1,020\nForward P/E (24x): EUR 870-950\nWeighted target: EUR 920-1,000\nCurrent: EUR 831 → 10-20% upside minimum\n\n🟢 SIGNAL: BUY ZONE\n→ ACCUMULATE: EUR 800-860\n→ 12M TARGET: EUR 950-1,050\n→ MENTAL STOP: EUR 750 (below 200D MA)\n\n📐 DEFENDER TEACHES: Order backlog = #1 defense metric. EUR 52B = 5+ years contracted revenue. This certainty doesn't exist in tech or consumer.`,
+  'tka': `⚠ DEFENDER — TKA DECISION\n\nTKA since Oct 2024: -18% vs RHM +44% = 62pp opportunity cost\nSteel: Chinese dumping -25% margins\nWrite-down risk: EUR 3B\n\nOPPORTUNITY COST:\nIf TKA money → RHM: +62% return\nEvery day in TKA = capital NOT working\n\nRECOMMENDATION:\n🔴 ROTATE 100% TKA → RHM immediately\n-18% loss realized. Capital freed. RHM has 10Y NATO tailwind.\n\n📐 DEFENDER TEACHES: Sunk cost fallacy kills retail. Ask: "Would I buy TKA TODAY at EUR 5.84?" If no — sell. Capital belongs where it works.`,
+  'plan for nvda': `🎯 DEFENDER — PLAN FOR NVDA\n\nBLACKWELL CYCLE:\nDC Revenue: +120% YoY — just starting\nMSFT META GOOGL AMZN committed $200B+ capex\nBlackwell margin 70%+ structural\n\nFAIR VALUE:\nP/S (15x 2025E $200B rev): $180-220\nP/E (30x 2026E): $170-200\nConservative target: $175-200\n\n🟢 SIGNAL: BUY ZONE\n→ ACCUMULATE: $120-140\n→ 12M TARGET: $175-200\n→ KEY RISK: Taiwan/TSMC scenario -30-50%\n\n📐 DEFENDER TEACHES: Nvidia is the picks-and-shovels of the AI gold rush. Every hyperscaler MUST have Blackwell. Demand exceeds supply through 2026. Do NOT sell.`,
+};
+
+let chatH=[], msgCnt=0;
+function updateAISt() {
+  const hasKey=getClaude()||getOAI();
+  const st=document.getElementById('ai-st'),md=document.getElementById('ai-md');
+  if(st){st.className='ai-st '+(hasKey?'ok':'no');st.textContent=hasKey?'✓ AI CONNECTED':'✗ NO KEY — SET IN CFG';}
+  if(md) md.textContent=hasKey?getModel().toUpperCase():'OFFLINE — SMART REPLIES ACTIVE';
+}
+function qP(t){const inp=document.getElementById('ai-inp');if(inp)inp.value=t;sendMsg();}
+function aiKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+async function sendMsg(){
+  const inp=document.getElementById('ai-inp');
+  const q=(inp?inp.value.trim():'');if(!q)return;if(inp)inp.value='';
+  addMsg('usr',q); chatH.push({role:'user',content:q}); msgCnt++;
+  const ce=document.getElementById('ai-cnt');if(ce)ce.textContent=msgCnt;
+  const think=addThink();
+  const hasKey=getClaude()||getOAI();
+  if(!hasKey){
+    const ql=q.toLowerCase();
+    let rep=null;
+    for(const k in OFFLINE){if(ql.includes(k)){rep=OFFLINE[k];break;}}
+    if(!rep) rep='🛡 DEFENDER OFFLINE\n\nAdd Claude API key in ⚙ CFG for live AI.\n\nOffline commands:\n→ "morning briefing"\n→ "simulation"\n→ "plan for rhm"\n→ "plan for nvda"\n→ "tka"\n\n📐 DEFENDER TEACHES: Get your Anthropic key at console.anthropic.com — free tier available.';
+    setTimeout(()=>{think.remove();addMsg('ai',rep.replace(/\n/g,'<br>'));chatH.push({role:'assistant',content:rep});},800+Math.random()*400);
+    return;
+  }
+  try{
+    let rt;
+    if(getClaude()&&getModel().startsWith('claude')){
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getClaude(),'anthropic-version':'2023-06-01'},body:JSON.stringify({model:getModel(),max_tokens:1800,system:SYS_PROMPT,messages:chatH.slice(-14)})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);rt=d.content&&d.content[0]&&d.content[0].text;
+    }else{
+      const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getOAI()},body:JSON.stringify({model:'gpt-4o',max_tokens:1800,messages:[{role:'system',content:SYS_PROMPT},...chatH.slice(-14)]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);rt=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+    }
+    chatH.push({role:'assistant',content:rt});
+    think.remove();addMsg('ai',(rt||'No response').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'));
+  }catch(err){think.remove();addMsg('ai','⚠ ERROR: '+err.message+'<br>Check API key in ⚙ CFG.');}
+}
+function addMsg(role,html){
+  const msgs=document.getElementById('ai-msgs');if(!msgs)return;
+  const n=new Date();const ts=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' CET';
+  const w=document.createElement('div');w.className='ai-msg '+role;
+  w.innerHTML='<div class="ai-av">'+(role==='ai'?'AI':'YOU')+'</div><div class="ai-inn"><div class="ai-bub">'+html+'</div><div class="ai-ts">'+ts+'</div></div>';
+  msgs.appendChild(w);msgs.scrollTop=msgs.scrollHeight;return w;
+}
+function addThink(){
+  const msgs=document.getElementById('ai-msgs');if(!msgs)return{remove:()=>{}};
+  const w=document.createElement('div');w.className='ai-msg ai';
+  w.innerHTML='<div class="ai-av">AI</div><div class="ai-inn"><div class="ai-bub"><div class="ai-think"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div></div></div>';
+  msgs.appendChild(w);msgs.scrollTop=msgs.scrollHeight;return w;
+}
+function clearChat(){chatH=[];msgCnt=0;const ce=document.getElementById('ai-cnt');if(ce)ce.textContent='0';const msgs=document.getElementById('ai-msgs');if(msgs)msgs.innerHTML='';addMsg('ai','🛡 Session cleared. DEFENDER ready.');}
+
+// ═══ INIT ═══
+function initApp(){
+  buildTicker();
+  setInterval(updateClock,1000); updateClock();
+  // AI welcome
+  setTimeout(()=>{ addMsg('ai','🛡 DEFENDER v1.0 ONLINE · Welcome, OPERATOR_01<br><br>Globe active · 12 positions tracked · All systems operational.<br><br>Click any marker on the globe for intel. Use quick buttons or type your query.<br><br>📐 DEFENDER TEACHES: Your edge is patience. Institutions take months to build positions. Retail sells in hours.'); updateAISt(); }, 400);
+  // Init globe when globe view is visible
+  setTimeout(initGlobe, 100);
+}
+</script>
+</body>
+</html>
